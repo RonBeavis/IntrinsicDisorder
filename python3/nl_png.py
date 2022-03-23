@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+Copyright © 2022 Ron Beavis
+
 import cgi,cgitb
 import sys
 import requests
