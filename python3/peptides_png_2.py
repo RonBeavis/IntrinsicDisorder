@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
-
 import cgi,cgitb
+import shutil
 import requests
 import re
 import json
@@ -129,8 +127,19 @@ def make_peptide_png(_l,_plength,_lines,_title,_file):
 	plt.gca().get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
 	plt.gca().get_xaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
 	fig.savefig('/var/www/intrinsicdisorder/ptm_png/%s_peps.png' % (cl), dpi=200, bbox_inches='tight')
+	try:
+		shutil.copy2('/var/www/intrinsicdisorder/ptm_png/%s_peps.png' % (cl),'/mnt/Actinium/ptm_png_a')
+	except:
+		pass
+	nl = ''
+	up = re.findall(r'UP\:(\w+)',desc)
+	nl = '<a class="bluesq" href="/a/ptm_png.py?l=%s" target="_nl" title="Check for PTMs">&#x1F384;</a>&nbsp;' % (_l)
+	nl += '<a class="bluesq" href="/a/nl_png.py?l=%s" target="_nl" title="Check for N-linked glycosylation">&#x1F36C;</a>&nbsp;' % (_l)
+	nl += '<a class="bluesq" href="/a/seq.py?l=%s" target="_seq" title="Sequence display">&#x270E;</a>' % (_l)
+	if len(up) and up[0] != 'NA':
+		nl += '&nbsp;<a class="bluesq" href="https://alphafold.ebi.ac.uk/entry/%s" target="_af" title="AF structure prediction">&#129526;</a>' % (up[0])
 	print('''<div class="pic"><img src="/ptm_png/%s_peps.png" height="400" width="800"/></div>''' % (cl))
-	print('<p class="desc">%s</p>' % (desc))
+	print('<p class="desc">%s (%s)</p>' % (desc,nl))
 	print('''<p class="con">This Westmore-Standing (W-S) diagram shows the number of times a residue has been observed in a peptide-to-spectrum match in GPMDB, as a function of the residue's position in 
 	the corresponding protein sequence.</p>''')
 	return

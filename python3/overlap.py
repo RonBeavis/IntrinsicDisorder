@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
-
 import cgi,cgitb
 import sys
 import requests
@@ -269,14 +266,22 @@ cgitb.enable()
 
 form = cgi.FieldStorage()
 print('Content-type: text/html\n\n')
+label1 = None
+label2 = None
 try:
 	label1 = form['l'].value
-	label2 = form['l2'].value
-	print_top(label1,label2)
 except:
-	print_top('','')
-	print_form('','')
-	print('</body></html>\n')
+	label1 = ''
+try:
+	label2 = form['l2'].value
+except:
+	label2 = ''
+
+print_top(label1,label2)
+print_form(label1,label2)
+
+if label1 == '' or label2 == '':
+	print('</div>\n</div>\n</body>\n</html>\n')
 	exit()
 
 ls = get_peptides(label1)

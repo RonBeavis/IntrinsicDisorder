@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
-
 import cgi,cgitb
+import shutil
 import sys
 import requests
 import re
@@ -222,15 +220,25 @@ def make_ptm_csv(_l,_plength,_title,_protein,_xs,_ys,_min,_legend):
 		else:
 			print('<p class="con">No N-linked glycosylation sites observed (0 of %i <i>N[^P][ST]</i> sites).</p>' % (len(rs)))
 		return
+	nlp = ''
+	link = ''
 	if len(up) and up[0] != 'NA':
-		link = 'UP:<a href="https://uniprot.org/uniprot/%s" target="_blank">%s</a>; GlyGen: <a href="https://glygen.org/protein/%s-1#Glycosylation" target="_blank" title="GlyGen entry">%s</a>' % (up[0],up[0],up[0],up[0])
+		nlp += '<a class="bluesq" href="https://uniprot.org/uniprot/%s" target="_blank" title="Un!Pr*t entry">%s</a>&nbsp;<a class="bluesq" href="https://glygen.org/protein/%s-1#Glycosylation" target="_blank" title="GlyGen entry">%s</a>' % (up[0],'&#x1F5D1;',up[0],'&#x2600;')
+		nlp += '&nbsp;<a class="bluesq" href="https://alphafold.ebi.ac.uk/entry/%s" target="_af" title="AF structure prediction">&#129526;</a>' % (up[0])
 		desc = re.sub(r'UP\:\w+',link,desc)
-	fig.savefig('/var/www/intrinsicdisorder/ptm_png/%s_nl.png' % (re.sub(r'[\|\:]',r'_',_l)), dpi=200, bbox_inches='tight')
+	cl = re.sub(r'[\|\:]',r'_',_l)
+	fig.savefig('/var/www/intrinsicdisorder/ptm_png/%s_nl.png' % (cl), dpi=200, bbox_inches='tight')
+	try:
+		shutil.copy2('/var/www/intrinsicdisorder/ptm_png/%s_nl.png' % (cl),'/mnt/Actinium/ptm_png_a')
+	except:
+		pass
 	script = "<img src='/ptm_png/%s_nl.png' height='400' width='800' />" % (re.sub(r'[\|\:]',r'_',_l))
 	print("<div id='diagram' class='pic'><center>%s</center></div>" % (script))
-	nl = ' (<a class="bluesq" href="/a/ptm_png.py?l=%s" target="_ptm" title="Check for common PTMs">🎄</a>' % (_l)
-	nl += ' <a class="bluesq" href="/a/seq.py?l=%s" target="_ptm" title="Sequence display">☙</a>)' % (_l)
-	print('<p class="desc">%s %s</p>' % (re.sub(r'alt\:',r'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alt: ',desc),nl))
+	nl = '<a class="bluesq" href="/a/ptm_png.py?l=%s" target="_ptm" title="Check for common PTMs">🎄</a>&nbsp;' % (_l)
+	nl += '<a class="bluesq" href="/a/peptides_png.py?l=%s" target="_ptm" title="Check for observable peptides">&#x1F527;</a>&nbsp;' % (_l)
+	nl += '<a class="bluesq" href="/a/seq.py?l=%s" target="_ptm" title="Sequence display">&#x270E;</a>' % (_l)
+	nl += nlp
+	print('<p class="desc">%s (%s), %i aa</p>' % (re.sub(r'alt\:',r'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alt: ',desc),nl,len(protein)))
 	lines = []
 	for i,x in enumerate(xsf):
 		if len(lines) % 2 == 0:

@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
-
 import cgi,cgitb
 
 import sys
@@ -57,8 +54,8 @@ def start_page(_l = '', _s = '',_t = '',_p = ''):
 		<meta property="og:image:height" content="400" />''' % (desc))
 	v = re.sub(r'[\|\:]',r'_',_l)
 	print('''
-		<meta property="og:image" content="https://intrinsicdisorder.com/ptm_png/%s_ptms.png" />
-		<meta property="og:image:secure_url" content="https://intrinsicdisorder.com/ptm_png/%s_ptms.png" />
+		<meta property="og:image" content="http://intrinsicdisorder.com/ptm_png_a/%s_ptms.png" />
+		<meta property="og:image:secure_url" content="https://intrinsicdisorder.com/ptm_png_a/%s_ptms.png" />
 		'''  % (quote(v),quote(v)))
 	print('''
 		<meta name="twitter:url" content="https://intrinsicdisorder.com/a/ptm_png.py?l=%s&s=%s&p=%s">
@@ -66,7 +63,7 @@ def start_page(_l = '', _s = '',_t = '',_p = ''):
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:description" content="%s" />
 		<meta name="twitter:title" content="Intrinsic Disorder PTMs - %s" />
-		<meta name="twitter:image" content="https://intrinsicdisorder.com/ptm_png/%s_ptms.png" />
+		<meta name="twitter:image" content="https://intrinsicdisorder.com/ptm_png_a/%s_ptms.png" />
 		'''  % (quote(re.sub(r'\|',r'~',_l)),quote(_s),quote(_p),desc,_l,quote(v)))
 	print('''
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Merriweather+Sans:300,300italic,regular,italic,600,600italic,700,700italic,800,800italic&amp;subset=latin,latin-ext" type="text/css" />

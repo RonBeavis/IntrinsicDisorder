@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
-
 import cgi,cgitb
 
+import shutil
 import sys
 import requests
 import re
@@ -42,7 +40,8 @@ motifs = [
 	('[ST]F',0,'ΦF'),
 	('N.[ST][LIV]',2,'NxΦL/I/V'),
 	('[ST]Q',0,'ΦQ'),
-	('[ST][LIV]',0,'ΦL/I/V')
+	('[ST][LIV]',0,'ΦL/I/V'),
+	('Y..P',0,'YxxP: Src')
 ]
 
 def get_motif(_a,_pm):
@@ -92,17 +91,18 @@ def get_description(_l):
 def create_plot(plt,xs,ys,ptype):
 	ms = 10
 	ms8 = 8
-	clrs = {	'Azure blue':			'#0007FFAA',
+	clrs = {		'Azure blue':		'#0007FFAA',
 				'British racing green':	'#004225AA',
-				'Honey':				'#EC9702AA',
-				'India green':			'#138808AA',
-				'Lime green':			'#32CD32AA',
-				'Purple':				'#6C0BA9AA',
-				'Red':					'#FF0000AA',
-				'Turquoise':			'#00FFEFAA',
-				'Violet':				'#710193AA',
-				'White':				'#EEEEEEAA',
-				'Dark grey':			'#060606AA'
+				'Honey':		'#EC9702AA',
+				'India green':		'#138808AA',
+				'Lime green':		'#32CD32AA',
+				'Purple':		'#6C0BA9AA',
+				'Red':			'#FF0000AA',
+				'Turquoise':		'#00FFEFAA',
+				'Violet':		'#710193AA',
+				'White':		'#EEEEEEAA',
+				'Khaki':		'#F0E68CAA',
+				'Dark grey':		'#060606AA'
 	}
 
 	if not len(ptype) or ptype.find('N') > -1:
@@ -117,6 +117,14 @@ def create_plot(plt,xs,ys,ptype):
 		plt.plot(xs['T-phosphoryl'],ys['T-phosphoryl'],markersize=ms,color=clrs['Red'],marker='^',linestyle='None',label='T-phos')
 		plt.plot(xs['TP-phosphoryl'],ys['TP-phosphoryl'],markersize=ms,color=clrs['Honey'],marker='^',linestyle='None',label='TP-phos')
 		plt.plot(xs['Y-phosphoryl'],ys['Y-phosphoryl'],markersize=ms,color=clrs['Red'],marker='o',linestyle='None',label='Y-phos')
+	if not len(ptype) or ptype.find('s') > -1:
+		plt.plot(xs['S-phosphoryl'],ys['S-phosphoryl'],markersize=ms,color=clrs['Red'],marker='v',linestyle='None',label='S-phos')
+		plt.plot(xs['SP-phosphoryl'],ys['SP-phosphoryl'],markersize=ms,color=clrs['Honey'],marker='v',linestyle='None',label='SP-phos')
+	if not len(ptype) or ptype.find('t') > -1:
+		plt.plot(xs['T-phosphoryl'],ys['T-phosphoryl'],markersize=ms,color=clrs['Red'],marker='^',linestyle='None',label='T-phos')
+		plt.plot(xs['TP-phosphoryl'],ys['TP-phosphoryl'],markersize=ms,color=clrs['Honey'],marker='^',linestyle='None',label='TP-phos')
+	if not len(ptype) or ptype.find('y') > -1:
+		plt.plot(xs['Y-phosphoryl'],ys['Y-phosphoryl'],markersize=ms,color=clrs['Red'],marker='o',linestyle='None',label='Y-phos')
 	if not len(ptype) or ptype.find('U') > -1:
 		plt.plot(xs['ubiquitinyl'],ys['ubiquitinyl'],markersize=ms,color=clrs['Lime green'],marker='v',linestyle='None',label='K-GG')
 		plt.plot(xs['K-sumoyl'],ys['K-sumoyl'],markersize=ms,color=clrs['Lime green'],marker='X',linestyle='None',label='K-sumo')
@@ -129,47 +137,67 @@ def create_plot(plt,xs,ys,ptype):
 		plt.plot(xs['citrulline'],ys['citrulline'],markersize=ms,color=clrs['British racing green'],marker='.',linestyle='None',label='R-citr')
 	if not len(ptype) or ptype.find('G') > -1:
 		plt.plot(xs['ST-glyco'],ys['ST-glyco'],markersize=ms,markerfacecolor=clrs['White'],markeredgewidth=1,markeredgecolor=clrs['Dark grey'],marker='s',linestyle='None',label='O-gly')
+	if not len(ptype) or ptype.find('L') > -1:
+		plt.plot(xs['gla'],ys['gla'],markersize=ms,markerfacecolor=clrs['Khaki'],markeredgewidth=1,markeredgecolor=clrs['Dark grey'],marker='o',linestyle='None',label='Gla')
 
 def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 #	print('<div id="diagram" class="pic"><center><img src="/pics/loading%i.gif"/></center></div>' % (random.randint(2,5)))
 #	sys.stdout.flush()
 	session = requests.session()
 	seq = list(_protein)
+
 	url = 'http://gpmdb.thegpm.org/1/peptide/pf/acc=%s&pos=1-%i&w=n' % (_l,_plength)
 	values = {'acetyl':None,'phosphoryl':None,'ubiquitinyl':None}
 	try:
 		r = session.get(url,timeout=20)
 	except:
-		print('Could not connect to GPMDB') 
+		print('Could not connect to GPMDB')
 		return None
 	try:
 		values['phosphoryl'] = json.loads(r.text)
 	except:
-		print('JSON error: problem with phosphorylation data') 
+		print('JSON error: problem with phosphorylation data')
 		return None
 
 	url = 'http://gpmdb.thegpm.org/1/peptide/af/acc=%s&pos=1-%i&w=n' % (_l,_plength)
 	try:
 		r = session.get(url,timeout=20)
 	except:
-		print('Could not connect to GPMDB') 
+		print('Could not connect to GPMDB')
 		return None
 	try:
 		values['acetyl'] = json.loads(r.text)
 	except:
-		print('JSON error: problem with acetylation data') 
+		print('JSON error: problem with acetylation data')
+		return None
+	try:
+		values['acetyl'] = json.loads(r.text)
+	except:
+		print('JSON error: problem with acetylation data')
+		return None
+
+	url = 'http://gpmdb.thegpm.org/1/peptide/gl/acc=%s&pos=1-%i&w=n' % (_l,_plength)
+	try:
+		r = session.get(url,timeout=20)
+	except:
+		print('Could not connect to GPMDB')
+		return None
+	try:
+		values['gla'] = json.loads(r.text)
+	except:
+		print('JSON error: problem with GLA data')
 		return None
 
 	url = 'http://gpmdb.thegpm.org/1/peptide/uf/acc=%s&pos=1-%i&w=n' % (_l,_plength)
 	try:
 		r = session.get(url,timeout=20)
 	except:
-		print('Could not connect to GPMDB') 
+		print('Could not connect to GPMDB')
 		return None
 	try:
 		values['ubiquitinyl'] = json.loads(r.text)
 	except:
-		print('JSON error: problem with ubiquitinylation data') 
+		print('JSON error: problem with ubiquitinylation data')
 		return None
 	#formulate a URL to request information about sumoylation for the protein identified by _l
 	url = 'http://gpmdb.thegpm.org/1/peptide/su/acc=%s&pos=1-%i&w=n' % (_l,_plength)
@@ -205,19 +233,19 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 	try:
 		values['dimethyl'] = json.loads(r.text)
 	except:
-		print('JSON error: problem with dimethylation data') 
+		print('JSON error: problem with dimethylation data')
 		return None
 	#formulate a URL to request information about O-linked glycosylation for the protein identified by _l
 	url = 'http://gpmdb.thegpm.org/1/peptide/ol/acc=%s&pos=1-%i&w=n' % (_l,_plength)
 	try:
 		r = session.get(url,timeout=20)
 	except:
-		print('Could not connect to GPMDB') 
+		print('Could not connect to GPMDB')
 		return None
 	try:
 		values['ST-glyco'] = json.loads(r.text)
 	except:
-		print('JSON error: problem with dimethylation data') 
+		print('JSON error: problem with dimethylation data')
 		return None
 	#formulate a URL to request information about R-citrullination for the protein identified by _l
 	url = 'http://gpmdb.thegpm.org/1/peptide/ct/acc=%s&pos=1-%i&w=n' % (_l,_plength)
@@ -235,12 +263,12 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 	try:
 		r = session.get(url,timeout=20)
 	except:
-		print('Could not connect to GPMDB') 
+		print('Could not connect to GPMDB')
 		return None
 	try:
 		values['oxidation'] = json.loads(r.text)
 	except:
-		print('JSON error: problem with oxidation data') 
+		print('JSON error: problem with oxidation data')
 		return None
 	a = 1;
 	xs = {	'citrulline':[],
@@ -257,16 +285,20 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 			'R-dimethyl':[],
 			'P-oxidation':[],
 			'K-oxidation':[],
-			'ST-glyco':[]
+			'ST-glyco':[],
+			'gla':[]
 		}
-	ys = copy.deepcopy(xs) 
-	ts = {'acetyl':0,'phosphoryl':0,'oxidation':0,'ubiquitinyl':0,'K-sumoyl':0,'dimethyl':0,'citrulline':0,'ST-glyco':0,'succinyl':0}
+	ys = copy.deepcopy(xs)
+	ts = {'acetyl':0,'phosphoryl':0,'oxidation':0,'ubiquitinyl':0,'K-sumoyl':0,'dimethyl':0,'citrulline':0,'ST-glyco':0,'succinyl':0,'gla':0}
 	min_obs = 5
 	lines = []
+	href = 'http://gpmdb.thegpm.org/thegpm-cgi/dblist_label_model.pl?label=%s&residues=' % (_l)
 	ms = re.finditer(r'(?=N[^P][ST])',_protein)
 	nl = ''
 	if True or len([m for m in ms]) > 0:
-		nl = '(<a class="bluesq" href="/a/nl_png.py?l=%s" target="_nl" title="Check for N-linked glycosylation">&#127852;</a>&nbsp;<a class="bluesq" href="/a/seq.py?l=%s" target="_seq" title="Sequence display">&#9753;</a>)' % (_l,_l)
+		nl = '<a class="bluesq" href="/a/nl_png.py?l=%s" target="_nl" title="Check for N-linked glycosylation">&#127852;</a>&nbsp;' % (_l)
+		nl += '<a class="bluesq" href="/a/peptides_png.py?l=%s" target="_nl" title="Check for observable peptides">&#x1F527;</a>&nbsp;' % (_l)
+		nl += '<a class="bluesq" href="/a/seq.py?l=%s" target="_seq" title="Sequence display">&#x270E;</a>&nbsp;' % (_l)
 
 	phospho_motifs = load_motifs(_protein)
 
@@ -277,6 +309,11 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 	if kms[0] != -1:
 		kms[0] = kms[0] + 1
 		kms.append(kms[0]+1)
+	Ktypes = {}
+	Ktype = ''
+	Ktabbs = {}
+	Ptypes = {}
+	Ptabbs = {}
 	for a in range(1,_plength+1):
 		b = str(a)
 		if b in values['acetyl']:
@@ -312,17 +349,22 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 		elif a == len(seq):
 			post = ']'
 		if len(lines) % 2 != 0:
-			line = '<tr><td>%i</td><td>%s</td>' % (a,'<i style="font-size: 10pt">%s&middot;</i>%s<i style="font-size: 10pt">&middot;%s</i>' % (pre,seq[a-1],post))
+			line = '<tr><td><a href="%s%i" target="_s">%i</a></td><td>%s</td>' % (href,a,a,'<i style="font-size: 10pt">%s&middot;</i>%s<i style="font-size: 10pt">&middot;%s</i>' % (pre,seq[a-1],post))
 		else:
-			line = '<tr class="alt"><td>%i</td><td>%s</td>' % (a,'<i style="font-size: 10pt">%s&middot;</i>%s<i style="font-size: 10pt">&middot;%s</i>' % (pre,seq[a-1],post))
+			line = '<tr class="alt"><td><a href="%s%i" target="_s">%i</a></td><td>%s</td>' % (href,a,a,'<i style="font-size: 10pt">%s&middot;</i>%s<i style="font-size: 10pt">&middot;%s</i>' % (pre,seq[a-1],post))
 		ok = False
 		mname = 'acetyl'
+		Ktype = ''
+		tabbs = 0
 		if(b in values[mname]):
+			tabbs = 0
 			if values[mname][b] >= min_obs and (seq[a-1] == 'K' or a < 4):
 				if seq[a-1] == 'K':
 					xs[mname].append(a)
 					ys[mname].append(values[mname][b])
 					ts[mname] += 1
+					Ktype += '+acetyl'
+					tabbs += values[mname][b]
 				else:
 					xs['N-acetyl'].append(a)
 					ys['N-acetyl'].append(values[mname][b])
@@ -335,6 +377,7 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 					ys['N-acetyl'].append(values['acetyl'][b])
 					ts[mname] += 1
 					line += '<td>%i</td>' % (values[mname][b])
+					tabbs += values[mname][b]
 					ok = True
 				else:
 					line += '<td></td>'
@@ -363,6 +406,8 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 				ys[mname].append(values[mname][b])
 				ts[mname] += 1
 				line += '<td>%i</td>' % (values[mname][b])
+				tabbs += values[mname][b]
+				Ktype += '+GGyl'
 				ok = True
 			else:
 				line += '<td></td>'
@@ -375,13 +420,23 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 				xs[mname].append(a)
 				ys[mname].append(values['K-sumoyl'][b])
 				ts[mname] += 1
+				Ktype += '+SUMOyl'
+				tabbs += values[mname][b]
 				line += '<td>%i</td>' % (values[mname][b])
 				ok = True
 			else:
 				line += '<td></td>'
 		else:
 			line += '<td></td>'
-
+		if Ktype:
+			if Ktype in Ktypes:
+				Ktypes[Ktype] += 1
+			else:
+				Ktypes[Ktype] = 1
+			if Ktype in Ktabbs:
+				Ktabbs[Ktype] += tabbs
+			else:
+				Ktabbs[Ktype] = tabbs
 		mname = 'phosphoryl'
 		if(b in values[mname]):
 			if values[mname][b] >= min_obs:
@@ -397,6 +452,14 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 					mv = get_motif(a,phospho_motifs)
 					if mv:
 						line += '<td>%i</td><td>%s</td>' % (values[mname][b],mv)
+						if mv in Ptypes:
+							Ptypes[mv] += 1
+						else:
+							Ptypes[mv] = 1
+						if mv in Ptabbs:
+							Ptabbs[mv] += values[mname][b]
+						else:
+							Ptabbs[mv] = values[mname][b]
 					else:
 						line += '<td>%i</td><td></td>' % (values[mname][b])
 					ok = True
@@ -411,6 +474,14 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 					phospho['T'] += 1
 					mv = get_motif(a,phospho_motifs)
 					if mv:
+						if mv in Ptypes:
+							Ptypes[mv] += 1
+						else:
+							Ptypes[mv] = 1
+						if mv in Ptabbs:
+							Ptabbs[mv] += values[mname][b]
+						else:
+							Ptabbs[mv] = values[mname][b]
 						line += '<td>%i</td><td>%s</td>' % (values[mname][b],mv)
 					else:
 						line += '<td>%i</td><td></td>' % (values[mname][b])
@@ -420,7 +491,19 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 					ys['Y-phosphoryl'].append(values[mname][b])
 					ts[mname] += 1
 					phospho['Y'] += 1
-					line += '<td>%i</td><td></td>' % (values[mname][b])
+					mv = get_motif(a,phospho_motifs)
+					if mv:
+						if mv in Ptypes:
+							Ptypes[mv] += 1
+						else:
+							Ptypes[mv] = 1
+						if mv in Ptabbs:
+							Ptabbs[mv] += values[mname][b]
+						else:
+							Ptabbs[mv] = values[mname][b]
+						line += '<td>%i</td><td>%s</td>' % (values[mname][b],mv)
+					else:
+						line += '<td>%i</td><td></td>' % (values[mname][b])
 					ok = True
 				else:
 					line += '<td></td><td></td>'
@@ -496,6 +579,18 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 				ok = True
 			else:
 				line += '<td></td>'
+		mname = 'gla'
+		if(b in values[mname]) and seq[a-1] == 'E':
+			if values[mname][b] >= 2:
+				xs[mname].append(a)
+				ys[mname].append(values[mname][b])
+				ts[mname] += 1
+				line += '<td>%i</td>' % (values[mname][b])
+				ok = True
+			else:
+				line += '<td></td>'
+		else:
+			line += '<td></td>'
 
 		if ok:
 			lines.append(line + '</tr>')
@@ -554,18 +649,53 @@ def make_ptm_csv(_l,_plength,_title,_protein,_file,_y,_s,_ltype,_ptype):
 #		print('<div><p>No PTMs detected for "%s". (<a href="http://gpmdb.thegpm.org/~/dblist_label/label=%s" title="main GPMDB page for this sequence" target="_blank">more</a>)</p></div>' % (_l,_l))
 #		print('<p class="desc">%s %s</p>' % (re.sub(r'alt\:',r'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alt:',desc),nl))
 #		return
-	fig.savefig('/var/www/intrinsicdisorder/ptm_png/%s_ptms.png' % (cl), dpi=200, bbox_inches='tight')
-	script = "<div id='diagram' class='pic'><center><img src='/ptm_png/%s_ptms.png' height='400' width='800' /></center></div>" % (cl)
+	fname = '%s_ptms.png' % (cl)
+	if _ptype:
+		fname = '%s_%s_ptms.png' % (cl,_ptype)
+
+	fig.savefig('/var/www/intrinsicdisorder/ptm_png/%s' % (fname), dpi=200, bbox_inches='tight')
+	try:
+		shutil.copy2('/var/www/intrinsicdisorder/ptm_png/%s' % (fname),'/mnt/Actinium/ptm_png_a')
+	except:
+		pass
+	script = "<div id='diagram' class='pic'><center><img src='/ptm_png/%s' height='400' width='800' /></center></div>" % (fname)
 	print(script)
 	up = re.findall(r'UP\:(\w+)',desc)
+	link = ''
 	if len(up) and up[0] != 'NA':
-		link = 'UP:<a href="https://uniprot.org/uniprot/%s" target="_blank">%s</a>; GlyGen: <a href="https://glygen.org/protein/%s-1#Glycosylation" target="_blank" title="GlyGen entry">%s</a>' % (up[0],up[0],up[0],up[0])
+		nl += '<a href="https://uniprot.org/uniprot/%s#ptm_processing" target="_blank" title="Un!Pr*t entry">%s</a> ' % (up[0],'&#x1F5D1;')
+		nl += '<a href="https://glygen.org/protein/%s-1#Glycosylation" target="_blank" title="GlyGen entry">%s</a>' % (up[0],'&#x2600;')
 		desc = re.sub(r'UP\:\w+',link,desc)
-	print('<p class="desc">%s %s</p>' % (re.sub(r'alt\:',r'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alt:',desc),nl))
-	create_table(lines,ts,_l,phospho,hydroxy,oglyco)
+		nl += '<a class="bluesq" href="https://alphafold.ebi.ac.uk/entry/%s" target="_af" title="AF structure prediction">&#129526;</a>' % (up[0])
+	else:
+		up = None
+	if _l.find('ENS') == 0:
+		nl += '&nbsp;<a class="bluesq" href="/a/exon.py?l=%s" target="_ex" title="exon structure">&#x2612;</a>' % (_l)
+	if desc.find('Source:SGD;Acc:') != -1:
+		desc = re.sub(r'Acc:(S00\d+)',r'<a href="https://www.yeastgenome.org/locus/\1" target="_blank">\1</a>',desc)
+	if desc.find('; MGI:') != -1:
+		desc = re.sub(r'MGI:(\d+)',r'<a href="http://www.informatics.jax.org/marker/MGI:\1" target="_blank">MGI:\1</a>',desc)
+	print('<p class="desc">%s (%s), %i aa</p>' % (re.sub(r'alt\:',r'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;alt:',desc),nl,len(seq)))
+	ktext = 'title="'
+	ktotal = float(sum(Ktabbs.values()))
+	for k in sorted(Ktypes.items(), key=lambda x:x[1]):
+		if ktotal > 0.0:
+			ktext += '%i× K%s (%i Ta, %.1f%%)\n' % (k[1],re.sub(r'(\w)\+(\w)',r'\1/\2',k[0]),Ktabbs[k[0]],100.0*Ktabbs[k[0]]/ktotal)
+		else:
+			ktext += '%i× K%s (%i Ta)\n' % (k[1],re.sub(r'(\w)\+(\w)',r'\1/\2',k[0]),Ktabbs[k[0]])
+	ktext += '"'
+	ptext = ''
+	ptotal = float(sum(Ptabbs.values()))
+	for p in sorted(Ptypes.items(), key=lambda x:x[1]):
+		if ptotal > 0.0:
+			ptext += '%i× %s (%i Ta, %.1f%%)\n' % (p[1],p[0],Ptabbs[p[0]],100.0*Ptabbs[p[0]]/ptotal)
+		else:
+			ptext += '%i× %s (%i Ta)\n' % (p[1],p[0],Ptabbs[p[0]])
+
+	create_table(lines,ts,_l,phospho,hydroxy,oglyco,ktext,ptext)
 	return
 
-def create_table(_lines,_ts,_l,_sty,_pk,_og):
+def create_table(_lines,_ts,_l,_sty,_pk,_og,_kt,_pt):
 	print('''
 	<p class="con">This Modification-Abundance (M-A) diagram shows the number of times a residue has been observed with a particular PTM in a peptide-to-spectrum match in GPMDB, 
 	as a function of the residue's position in the corresponding protein sequence. 
@@ -587,28 +717,30 @@ def create_table(_lines,_ts,_l,_sty,_pk,_og):
 	<td><span title="PSMs with P/K-oxidation at a site (tabbs)">P/K-oxy</span></td>
 	<td><span title="PSMs with citrulline at a site (tabbs)">R-citr</span></td>
 	<td><span title="PSMs with O-glycosylation at a site (tabbs)">O-gly</span></td>
+	<td><span title="PSMs with gamma-carboxylation at a site (tabbs)">Gla</span></td>
 	</tr>'''
 	print(head)
 	for l in _lines:
 		print(l)
 	if len(_lines) > 10:
 		print(head)
-	pline = 'title="S=%i,T=%i,Y=%i"' % (_sty['S'],_sty['T'],_sty['Y'])
-	kline = 'title="K=%i,P=%i"' % (_pk['K'],_pk['P'])
-	gline = 'title="S+%i,T=%i"' % (_og['S'],_og['T'])
+	pline = 'title="%i× S+phosphoryl\n%i× T+phosphoryl\n%i× Y+phosphoryl\n%s"' % (_sty['S'],_sty['T'],_sty['Y'],_pt)
+	kline = 'title="%i× K+oxide\n%i× P+oxide"' % (_pk['K'],_pk['P'])
+	gline = 'title="%i× S+glycosyl\n%i× T+glycosyl"' % (_og['S'],_og['T'])
 	print('''<tr class="tots"><td style="text-align: right">sites:</td>
 	<td>%i</td>
 	<td>%i</td>
 	<td>%i</td>
 	<td>%i</td>
-	<td>%i</td>
+	<td %s>%i</td>
 	<td %s>%i</td>
 	<td> </td>
 	<td>%i</td>
 	<td %s>%i</td>
 	<td>%i</td>
 	<td %s>%i</td>
-	</tr>''' % (len(_lines),_ts['acetyl'],_ts['succinyl'],_ts['ubiquitinyl'],_ts['K-sumoyl'],pline,_ts['phosphoryl'],_ts['dimethyl'],kline,_ts['oxidation'],_ts['citrulline'],gline,_ts['ST-glyco']))
+	<td>%i</td>
+	</tr>''' % (len(_lines),_ts['acetyl'],_ts['succinyl'],_ts['ubiquitinyl'],_kt,_ts['K-sumoyl'],pline,_ts['phosphoryl'],_ts['dimethyl'],kline,_ts['oxidation'],_ts['citrulline'],gline,_ts['ST-glyco'],_ts['gla']))
 	print('</table></div>')
 	print('''<div id="content"><ol>
 	<li><b>pos:</b> location of the modification in protein coordinates;</li>
@@ -621,8 +753,9 @@ def create_table(_lines,_ts,_l,_sty,_pk,_og):
 	<li><b>sumo:</b> PSMs with K-sumoylation at <i>pos</i> (tabbs);</li>
 	<li><b>R-dimeth:</b> PSMs with R-dimethylation at <i>pos</i> (tabbs);</li>
 	<li><b>P/K-oxy:</b> PSMs with 4-hydroxyproline or 5-hydroxylysine at <i>pos</i> (tabbs);</li>
-	<li><b>R-citr:</b> PSMs with citrulline at <i>pos</i> (tabbs);  &amp;</li>
-	<li><b>O-gly</b> PSMs with O-linked glycosylation at <i>pos</i> (tabbs).</li>
+	<li><b>R-citr:</b> PSMs with citrulline at <i>pos</i> (tabbs);</li>
+	<li><b>O-gly</b> PSMs with O-linked glycosylation at <i>pos</i> (tabbs); &amp;</li>
+	<li><b>Gla</b> PSMs with E+gamma-carboxyl at <i>pos</i> (tabbs).</li>
 	</ol></div>''')
 	print('''<div id="content">p-code values (<i>e.g.</i>, <a href="/a/ptm_png.py?l=%s&amp;p=NAS" target="_blank">&amp;p=NAS</a>):
 	<ol>
@@ -633,9 +766,10 @@ def create_table(_lines,_ts,_l,_sty,_pk,_og):
 	<li><a href="/a/ptm_png.py?l=%s&amp;p=U" target="_blank">&amp;p=U</a>: K-GG or K-SUMO conjugation;</li>
 	<li><a href="/a/ptm_png.py?l=%s&amp;p=M" target="_blank">&amp;p=M</a>: R-dimethylation;</li>
 	<li><a href="/a/ptm_png.py?l=%s&amp;p=O" target="_blank">&amp;p=O</a>: 4-hydroxyproline or 5-hydroxylysine;</li>
-	<li><a href="/a/ptm_png.py?l=%s&amp;p=C" target="_blank">&amp;p=C</a>: citrulline; &amp;</li>
-	<li><a href="/a/ptm_png.py?l=%s&amp;p=G" target="_blank">&amp;p=G</a>: O-linked glycosylation).</li>
-	</ol></div>''' % (_l,_l,_l,_l,_l,_l,_l,_l,_l,_l))
+	<li><a href="/a/ptm_png.py?l=%s&amp;p=C" target="_blank">&amp;p=C</a>: citrulline;</li>
+	<li><a href="/a/ptm_png.py?l=%s&amp;p=G" target="_blank">&amp;p=G</a>: O-linked glycosylation; &amp;</li>
+	<li><a href="/a/ptm_png.py?l=%s&amp;p=L" target="_blank">&amp;p=L</a>: Gla.</li>
+	</ol></div>''' % (_l,_l,_l,_l,_l,_l,_l,_l,_l,_l,_l))
 
 form = cgi.FieldStorage()
 print('Content-type: text/html\n\n')

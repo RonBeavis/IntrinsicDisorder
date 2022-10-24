@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
-
 import cgi,cgitb
 import re
 import requests
@@ -239,7 +236,7 @@ def print_seq(_s,_m,_b,_l,_h,_fe):
 				marks[i+1]['grey'] = 1
 		highlight = ''
 		if i+1 in hs and _fe['green']:
-			highlight = ' highlight'			
+			highlight = ' highlight'
 			if i+1 not in marks:
 				marks[i+1] = {'grey':0,'green':1,'red':0,'blue':0}
 			else:
@@ -261,20 +258,24 @@ def print_seq(_s,_m,_b,_l,_h,_fe):
 	display = re.sub(r'\<div class=\"ex1\"\>$',r'',display)
 	display += '</div>\n'
 	print(display)
-	print('<div class="ex1"><hr width="650" style="margin-left: -20px;"/></div>\n')
+	print('<div class="ex2"><hr width="650" style="margin-left: -20px;"/></div>\n')
 	if text:
-		print('<div class="ex1"><u>TM domains:</u></div>\n')
+		print('<div class="ex2"><u>TM domains:</u></div>\n')
 		print(text)
-	if interpro:
-		print('<div class="ex1"><u>Interpro domains:</u></div>\n')
+	if interpro and len(_s) > 0:
+		lseq = 600.0/len(_s)
+		print('<div class="ex2"><u>Interpro domains:</u></div>\n')
 		for v in interpro:
-			print('<div class="ex1">(%i-%i) %s </div>' % (v['b'],v['e'],v['ldesc']))
-	print('<div class="ex1"><u>SHA3 256:</u><br>\n%s\n</div>\n' % (hexdigest))
+			print('<div class="ex2">(%i-%i) %s </div>' % (v['b'],v['e'],v['ldesc']))
+			print('<div class="bar"><img src="/pics/a.png" width="%i" height="5"><img src="/pics/g.png" width="%i" height="5" border="0"><img src="/pics/a.png" width="%i" height="5"></div>' % (lseq*(v['b']-1),lseq*(v['e']-v['b']-1),lseq*(len(_s)-v['e'])))
+#			print('<div class="ex1">%i : %i : %i</div>' % (lseq*(v['b']-1),lseq*(v['e']-v['b']-1),lseq*(len(_s)-v['e'])))
+
+	print('<div class="ex2"><u>SHA3 256:</u><br>\n%s\n</div>\n' % (hexdigest))
 	return marks
 
 def print_form(_s,_m,_b,_l,_h,_fe):
 	but = '<input type="submit" class="button" value="&#8635;" title="refresh display" />'
-	print('<div class="ex1">')
+	print('<div class="ex2">')
 	print('<form style="display: inline;" name="seq_form" action="/a/seq.py" METHOD="POST" ENCTYPE="multipart/form-data">')
 	print('<hr width="650" style="margin-left: -20px;"/>')
 	print('<input type="hidden" value="no" name="red" />')
@@ -300,7 +301,7 @@ def print_form(_s,_m,_b,_l,_h,_fe):
 	print('<span class="accession">&nbsp;&nbsp;&nbsp;accession:</span>&nbsp;<input id="label" name="l" size="20" value="%s" onChange="clearSeq();" placeholder="ENSP00000242786" />&nbsp;%s<br/>' % (_l,but))
 	print('<span class="accession">&nbsp;&nbsp;&nbsp;&nbsp;sequence:</span><br/><textarea rows="10" cols="50" id="seq" name="s" placeholder="protein sequence">%s</textarea>&nbsp;%s' % (_s,but))
 	print('</form></div>\n')
-	
+
 cgitb.enable()
 form = cgi.FieldStorage()
 print('Content-type: text/html\n\n')
@@ -369,7 +370,7 @@ for p in peps:
 			elif marks[c]['green']:
 				line += '<span class="highlight">%s</span>' % (a)
 		else:
-			line += '%s' % (a)		
+			line += '%s' % (a)
 	line += '</td></tr>\n'
 	print(line)
 print('</table></div>')

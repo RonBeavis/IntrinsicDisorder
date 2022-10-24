@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-Copyright © 2022 Ron Beavis
-
 import cgi,cgitb
 import sys
 import requests
@@ -41,7 +39,7 @@ def start_page(_l = ''):
 		<head>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta charset="utf-8">
-		<title>🍬 N-linked glycosylation diagram</title>
+		<title>ID N-linked glycosylation diagram</title>
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<meta name="robots" content="index,nofollow,noarchive">''')
 	print('''
@@ -55,8 +53,8 @@ def start_page(_l = ''):
 		<meta property="og:image:height" content="400" />''' % (desc))
 	v = re.sub(r'[\|\:]',r'_',_l)
 	print('''
-		<meta property="og:image" content="https://intrinsicdisorder.com/ptm_png/%s_nl.png" />
-		<meta property="og:image:secure_url" content="https://intrinsicdisorder.com/ptm_png/%s_nl.png" />
+		<meta property="og:image" content="http://intrinsicdisorder.com/ptm_png_a/%s_nl.png" />
+		<meta property="og:image:secure_url" content="https://intrinsicdisorder.com/ptm_png_a/%s_nl.png" />
 		'''  % (v,v))
 	print('''
 		<meta name="twitter:url" content="https://intrinsicdisorder.com/a/nl_png.py?l=%s">
@@ -64,7 +62,7 @@ def start_page(_l = ''):
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:description" content="%s" />
 		<meta name="twitter:title" content="Intrinsic Disorder N-link glycosylation - %s" />
-		<meta name="twitter:image" content="https://intrinsicdisorder.com/ptm_png/%s_nl.png" />
+		<meta name="twitter:image" content="http://intrinsicdisorder.com/ptm_png_a/%s_nl.png" />
 		'''  % (re.sub(r'\|',r'~',_l),desc,_l,v))
 	print('''
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Merriweather+Sans:300,300italic,regular,italic,600,600italic,700,700italic,800,800italic&amp;subset=latin,latin-ext" type="text/css" />

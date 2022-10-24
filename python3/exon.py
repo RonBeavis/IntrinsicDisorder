@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+#!c:/python36/python.exe
+
+
 import cgi,cgitb
 import re
 import requests
@@ -27,7 +30,7 @@ def get_description(_l):
 	return values[0]
 
 def print_top(_l,_url):
-	desc = "Sequence viewer"
+	desc = "Exon viewer"
 	if _l:
 		desc = get_description(_l)
 	max = 100
@@ -43,29 +46,29 @@ def print_top(_l,_url):
 		<head>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta charset="utf-8">
-		<title>☙ 1&deg; sequence display</title>
+		<title>Exon sequence display</title>
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<meta name="robots" content="index,nofollow,noarchive">''')
 	print('''
 		<meta property="og:locale" content="en_EN" />
 		<meta property="og:type" content="website" />
-		<meta property="og:title" content="Intrinsic Disorder sequence display" />
+		<meta property="og:title" content="Intrinsic Disorder exon display" />
 		<meta property="og:description" content="%s" />
 		<meta property="og:url" content="https://intrinsicdisorder.com" />
 		<meta property="og:image:width" content="800" />
 		<meta property="og:image:height" content="400" />
-		<meta property="og:image" content="https://intrinsicdisorder.com/pics/sq.png" />
-		<meta property="og:image:secure_url" content="https://intrinsicdisorder.com/pics/sq.png" />
+		<meta property="og:image" content="https://intrinsicdisorder.com/pics/ex.png" />
+		<meta property="og:image:secure_url" content="https://intrinsicdisorder.com/pics/ex.png" />
 		''' % (desc))
 	v = re.sub(r'[\|\:]',r'_',_l)
 	print('''
-		<meta name="twitter:url" content="https://intrinsicdisorder.com/a/seq.py?l=%s">
+		<meta name="twitter:url" content="https://intrinsicdisorder.com/a/exon.py?l=%s">
 		<meta name="twitter:domain" content="intrinsicdisorder.com">
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:site" content="@norsivaeb" />
 		<meta name="twitter:description" content="%s" />
-		<meta name="twitter:title" content="Intrinsic Disorder sequence display - %s" />
-		<meta name="twitter:image" content="https://intrinsicdisorder.com/pics/sq.png" />
+		<meta name="twitter:title" content="Intrinsic Disorder exon display - %s" />
+		<meta name="twitter:image" content="https://intrinsicdisorder.com/pics/ex.png" />
 		'''  % (re.sub(r'\|',r'~',_l),desc,_l))
 	print('''<script type="text/javascript">
 		<!--
@@ -92,17 +95,17 @@ def print_top(_l,_url):
 			format('ttf');
 		}
 		@font-face	{
-			font-family: 'Anonymous Pro';
-			font-style: italic;
-			font-weight: 400;
-			src: local('Anonymous Pro-Italic'), url('/fonts/AnonymousPro-Italic.ttf');
-			format('ttf');
-		}
-		@font-face	{
 			font-family: 'Amino New';
 			font-style: normal;
 			font-weight: 400;
 			src: local('Amino New'), url('/fonts/AMINONEW.TTF');
+			format('ttf');
+		}
+		@font-face	{
+			font-family: 'Anonymous Pro';
+			font-style: italic;
+			font-weight: 400;
+			src: local('Anonymous Pro-Italic'), url('/fonts/AnonymousPro-Italic.ttf');
 			format('ttf');
 		}
 		body {
@@ -122,15 +125,15 @@ def print_top(_l,_url):
 			font-size: 11pt;
 		}
 		.red	{
-			background-color: #ff6666;
-			color: white;
+			background-color: #ffffff;
+			color: red;
 			border: 1px solid white;
 			border-radius: 5px;
 			cursor: pointer;
 		}
 		.blue	{
-			background-color: #6666ff;
-			color: white;
+			background-color: #ffffff;
+			color: blue;
 			border: 1px solid white;
 			border-radius: 5px;
 			cursor: pointer;
@@ -143,8 +146,23 @@ def print_top(_l,_url):
 			cursor: pointer;
 		}
 		.unmarked	{
-			color: grey;
-			border: 1px solid white;
+			background-color: #ff00ff;
+			color: white;
+			border: 1px solid #ff00ff;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.xblue	{
+			background-color: #0000ff;
+			color: white;
+			border: 1px solid #0000ff;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.xred	{
+			background-color: #ff0000;
+			color: white;
+			border: 1px solid #ff0000;
 			border-radius: 5px;
 			cursor: pointer;
 		}
@@ -159,6 +177,21 @@ def print_top(_l,_url):
 			display: inline;
 			margin: 0 auto;
 			font-size: 8px;
+		}
+		p {
+			display: block;
+			margin-top: 0.5em;
+			margin-bottom: 0.5em;
+			margin-left: 5em;
+			margin-right: auto;
+		}
+		.desc {
+	  		width: 650px ;
+			font-size: 12pt;
+	  		margin-left: auto ;
+	  		margin-right: auto ;
+	  		background-color: #f9eee5;
+	  		font-family:  "Merriweather", serif;
 		}
 		.highlight	{
 			background-color: #00cc99;
@@ -216,7 +249,7 @@ def print_top(_l,_url):
 <SCRIPT LANGUAGE="JavaScript" type="text/javascript"> 
 function fill_main(url)
 {
-	fetch("/a/seq2.py?"+url)
+	fetch("/a/exon2.py?"+url)
 		.then(function(response) {
 		 return response.text();
 	})
@@ -247,44 +280,11 @@ form = cgi.FieldStorage()
 print('Content-type: text/html\n\n')
 seq = ''
 url = ''
-try:
-	seq = form['s'].value.upper()
-except:
-	seq = ''
-seq = re.sub(r'[^A-Z]+',r'',seq)
-url += 's=' +seq
-mark = ''
-try:
-	mark = form['m'].value
-except:
-	mark = ''
-url += '&m=' + mark
-blue = ''
-try:
-	blue = form['b'].value
-except:
-	blue = ''
-url += '&b=' + blue
 label = ''
 try:
 	label = re.sub('~',r'|',form['l'].value.upper())
 except:
 	label = ''
 url += '&l=' + label
-highlight = ''
-try:
-	highlight = form['h'].value
-except:
-	highlight = ''
-url += '&h=' + highlight
-boxes = ['grey','red','green','blue']
-for b in boxes:
-	try:
-		if form[b].value == 'yes':
-			url += '&' + b + '=yes'
-		else:
-			url += '&' + b + '='
-	except:
-			url += '&' + b + '=yes'
 print_top(label,url)
 print_bottom()
